@@ -267,95 +267,94 @@ int main()
   printf("<hr/>Database output");
   printf("<div>");
   const char *conninfo;
-    PGconn     *conn;
-    PGresult   *res;
-    int         nFields;
-    int         i,
-                j;
+  PGconn     *conn;
+  PGresult   *res;
+  int         nFields;
+  int         i,
+              j;
 
-    /*
-     * If the user supplies a parameter on the command line, use it as the
-     * conninfo string; otherwise default to setting dbname=postgres and using
-     * environment variables or defaults for all other connection parameters.
-     */
-        conninfo = "dbname = railroaddb";
+  /*
+   * If the user supplies a parameter on the command line, use it as the
+   * conninfo string; otherwise default to setting dbname=postgres and using
+   * environment variables or defaults for all other connection parameters.
+   */
+  conninfo = "dbname = railroaddb";
 
-    /* Make a connection to the database */
-    conn = PQconnectdb(conninfo);
+  /* Make a connection to the database */
+  conn = PQconnectdb(conninfo);
 
-    /* Check to see that the backend connection was successfully made */
-    if (PQstatus(conn) != CONNECTION_OK)
-    {
-        fprintf(stderr, "Connection to database failed: %s",
-                PQerrorMessage(conn));
-        exit_nicely(conn);
-    }
+  /* Check to see that the backend connection was successfully made */
+  if (PQstatus(conn) != CONNECTION_OK)
+  {
+      fprintf(stderr, "Connection to database failed: %s",
+              PQerrorMessage(conn));
+      exit_nicely(conn);
+  }
 
-    /* Set always-secure search path, so malicious users can't take control. */
-    res = PQexec(conn,
-                 "SELECT pg_catalog.set_config('search_path', '', false)");
-    if (PQresultStatus(res) != PGRES_TUPLES_OK)
-    {
-        fprintf(stderr, "SET failed: %s", PQerrorMessage(conn));
-        PQclear(res);
-        exit_nicely(conn);
-    }
+  /* Set always-secure search path, so malicious users can't take control. */
+  res = PQexec(conn, "SELECT pg_catalog.set_config('search_path', '', false)");
+  if (PQresultStatus(res) != PGRES_TUPLES_OK)
+  {
+      fprintf(stderr, "SET failed: %s", PQerrorMessage(conn));
+      PQclear(res);
+      exit_nicely(conn);
+  }
 
-    /*
-     * Should PQclear PGresult whenever it is no longer needed to avoid memory
-     * leaks
-     */
-    PQclear(res);
+  /*
+   * Should PQclear PGresult whenever it is no longer needed to avoid memory
+   * leaks
+   */
+  PQclear(res);
 
-    /*
-     * Our test case here involves using a cursor, for which we must be inside
-     * a transaction block.  We could do the whole thing with a single
-     * PQexec() of "select * from pg_database", but that's too trivial to make
-     * a good example.
-     */
+  /*
+   * Our test case here involves using a cursor, for which we must be inside
+   * a transaction block.  We could do the whole thing with a single
+   * PQexec() of "select * from pg_database", but that's too trivial to make
+   * a good example.
+   */
 
-    /* Start a transaction block */
-    res = PQexec(conn, "BEGIN");
-    if (PQresultStatus(res) != PGRES_COMMAND_OK)
-    {
-        fprintf(stderr, "BEGIN command failed: %s", PQerrorMessage(conn));
-        PQclear(res);
-        exit_nicely(conn);
-    }
-    PQclear(res);
+  /* Start a transaction block */
+  res = PQexec(conn, "BEGIN");
+  if (PQresultStatus(res) != PGRES_COMMAND_OK)
+  {
+      fprintf(stderr, "BEGIN command failed: %s", PQerrorMessage(conn));
+      PQclear(res);
+      exit_nicely(conn);
+  }
+  PQclear(res);
 
-    /*
-     * Fetch rows from pg_database, the system catalog of databases
-     */
-    res = PQexec(conn, "DECLARE myportal CURSOR FOR select * from pg_database");
-    if (PQresultStatus(res) != PGRES_COMMAND_OK)
-    {
-        fprintf(stderr, "DECLARE CURSOR failed: %s", PQerrorMessage(conn));
-        PQclear(res);
-        exit_nicely(conn);
-    }
-    PQclear(res);
+  /*
+   * Fetch rows from pg_database, the system catalog of databases
+   */
+  res = PQexec(conn, "DECLARE myportal CURSOR FOR select * from railroad.\"Tickets\"");
+  if (PQresultStatus(res) != PGRES_COMMAND_OK)
+  {
+      fprintf(stderr, "DECLARE CURSOR failed: %s", PQerrorMessage(conn));
+      PQclear(res);
+      exit_nicely(conn);
+  }
+  PQclear(res);
 
-    res = PQexec(conn, "FETCH ALL in myportal");
-    if (PQresultStatus(res) != PGRES_TUPLES_OK)
-    {
-        fprintf(stderr, "FETCH ALL failed: %s", PQerrorMessage(conn));
-        PQclear(res);
-        exit_nicely(conn);
-    }
+  res = PQexec(conn, "FETCH ALL in myportal");
+  if (PQresultStatus(res) != PGRES_TUPLES_OK)
+  {
+      fprintf(stderr, "FETCH ALL failed: %s", PQerrorMessage(conn));
+      PQclear(res);
+      exit_nicely(conn);
+  }
 
     /* first, print out the attribute names */
     nFields = PQnfields(res);
     for (i = 0; i < nFields; i++)
         printf("%-15s", PQfname(res, i));
-    printf("\n\n");
+    printf("<br><br>");
 
     /* next, print out the rows */
     for (i = 0; i < PQntuples(res); i++)
     {
         for (j = 0; j < nFields; j++)
             printf("%-15s", PQgetvalue(res, i, j));
-        printf("\n");
+        printf("<br>");
     }
 
     PQclear(res);
