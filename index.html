@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<HEAD>
+	<meta charset=UTF-8>
+	<TITLE></TITLE>
+	<noscript><link type="text/css" rel="stylesheet" href="//www.ibm.com/data/css/v11/r1.css"/></noscript>
+	<style type="text/css">
+a.mbody:link { text-decoration: none; color: "#006699"; }
+a.mbody:visited { text-decoration: none; color: "#006699"; }
+a.mbody:hover { text-decoration: underline; color: "#006699";}
+pre { font-family: monospace; font-weight: normal; font-size: 12px; }
+.ast { font-family: Arial, sans-serif; font-size: 10pt; color: #cc6600; }
+.star { font-family: Arial, sans-serif; font-size: 10pt; color: #cc6600; }
+	</style>
+</HEAD>
+<body>
+<strong>POST request form: </strong>
+<p>
+<form method="POST" action="/cgi-bin/railroad.cgi">
+   <input name="YourInput" size=42,2>
+   <br>
+   Enter input for the C sample and click <input type="SUBMIT" value="ENTER">
+   <p>The output will be a screen with the text,
+   "YourInput=" followed by the text you typed above.
+   The contents of environment variable SERVER_SOFTWARE is also displayed.
+</form>
+<br>
+<hr>
+<hr>
+<br>
+<p>
+<strong>GET request form: </strong>
+<p>
+<form method="GET" action="/cgi-bin/railroad.cgi">
+   <input name="YourInput" size=42,2>
+   <br>
+   Enter input for the C sample and click <input type="SUBMIT" value="ENTER">
+   <p>The output will be a screen with the text,
+   "YourInput=" followed by the text you typed above.
+   The contents of environment variable SERVER_SOFTWARE is also displayed.
+</form>
+</html>
