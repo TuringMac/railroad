@@ -2,41 +2,39 @@
 <html>
 <HEAD>
 	<meta charset=UTF-8>
-	<TITLE></TITLE>
-	<noscript><link type="text/css" rel="stylesheet" href="//www.ibm.com/data/css/v11/r1.css"/></noscript>
-	<style type="text/css">
-a.mbody:link { text-decoration: none; color: "#006699"; }
-a.mbody:visited { text-decoration: none; color: "#006699"; }
-a.mbody:hover { text-decoration: underline; color: "#006699";}
-pre { font-family: monospace; font-weight: normal; font-size: 12px; }
-.ast { font-family: Arial, sans-serif; font-size: 10pt; color: #cc6600; }
-.star { font-family: Arial, sans-serif; font-size: 10pt; color: #cc6600; }
-	</style>
+	<TITLE>Покупка билета на поезд</TITLE>
+	<link rel="stylesheet" href="main.css">
+	 <script src="main.js"></script> 
 </HEAD>
 <body>
-<strong>POST request form: </strong>
-<p>
-<form method="POST" action="/cgi-bin/railroad.cgi">
-   <input name="YourInput" size=42,2>
-   <br>
-   Enter input for the C sample and click <input type="SUBMIT" value="ENTER">
-   <p>The output will be a screen with the text,
-   "YourInput=" followed by the text you typed above.
-   The contents of environment variable SERVER_SOFTWARE is also displayed.
-</form>
-<br>
-<hr>
-<hr>
-<br>
-<p>
-<strong>GET request form: </strong>
-<p>
-<form method="GET" action="/cgi-bin/railroad.cgi">
-   <input name="YourInput" size=42,2>
-   <br>
-   Enter input for the C sample and click <input type="SUBMIT" value="ENTER">
-   <p>The output will be a screen with the text,
-   "YourInput=" followed by the text you typed above.
-   The contents of environment variable SERVER_SOFTWARE is also displayed.
-</form>
+	<div id="about">
+		<h2>Купите билет на поезд</h2>
+		<span>Мы предоставляем комфортные купе, питание и доступ в интернет по всему пути следования</span>
+		<hr/>
+	</div>
+	<div class="form">
+		<h3>Пассажир</h3>
+		<form method="POST" action="/cgi-bin/railroad.cgi">
+			<label for="firstName">First name:</label><br>
+			<input id="fname" name="firstName" size=42,2><br>
+			<label for="lastName">Last name:</label><br>
+			<input id="lname" name="lastName" size=42,2><br>
+			<label for="year">Year born:</label><br>
+			<input id="year" name="year" size=4,2><br>
+			
+			<div id="parent" style="display: none;">
+				<hr/>
+				<h3>Родитель</h3>
+				<label for="parFirstName">First name:</label><br>
+				<input id="pfname" name="parFirstName" size=42,2><br>
+				<label for="parLastName">Last name:</label><br>
+				<input id="plname" name="parLastName" size=42,2><br>
+				<label for="parYear">Year born:</label><br>
+				<input name="parYear" size=4,2><br>
+			</div>
+			<br/>
+			<input type="SUBMIT" value="Купить">
+		</form>
+	</div>
+	<hr/>
 </html>
