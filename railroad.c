@@ -74,7 +74,11 @@ void writeData(char* ptrToData, int dataLen)
  
 char *getParam(char** data, char* name)
 {
-	
+	for(int i = 0; i< 6; i+=2)
+	{
+		if(strcmp(data[i],name) == 0)
+			return data[i+1];
+	}
 }
  
  
@@ -139,7 +143,15 @@ int main()
   int    contentLength;                /* int content length          */
   int    bytesRead;                    /* number of bytes read.       */
   int    queryStringLen;               /* Length of QUERY_STRING      */
+
   char	 **data;  // Parsed args
+
+  const char *conninfo;
+  PGconn     *conn;
+  PGresult   *res;
+  int         nFields;
+  int         i,
+              j;
  
   /*------------------------------------------------------------------*/
   /* The "Content-type" is the minimum request header that must be    */
@@ -162,20 +174,52 @@ int main()
   /* contain standard input, QUERY_STRING, CONTENT_LENGTH,            */
   /* SERVER_SOFTWARE and REQUEST_METHOD.                              */
   /*------------------------------------------------------------------*/
+  printf("<!DOCTYPE html>\n");
   printf("<html>\n");
   printf("<head>\n");
+  printf("<meta charset=\"UTF-8\">\n");
   printf("<title>\n");
   printf("Покупка билета\n");
   printf("</title>\n");
   printf("</head>\n");
   printf("<body>\n");
-  //printf("<h1>Sample iSeries ILE/C program.</h1>\n");
-  //printf("<br>This is sample output writing in iSeries ILE/C\n");
-  //printf("<br>as a sample of CGI programming.  This program reads\n");
-  //printf("<br>the input data from Query_String environment\n");
-  //printf("<br>variable when the Request_Method is GET and reads\n");
-  //printf("<br>standard input when the Request_Method is POST.\n");
  
+  /*
+   * If the user supplies a parameter on the command line, use it as the
+   * conninfo string; otherwise default to setting dbname=postgres and using
+   * environment variables or defaults for all other connection parameters.
+   */
+  //conninfo = "user=dbuser dbname=railroaddb";
+  conninfo = "dbname=railroaddb";
+
+  /* Make a connection to the database */
+  conn = PQconnectdb(conninfo);
+
+  /* Check to see that the backend connection was successfully made */
+  if (PQstatus(conn) != CONNECTION_OK)
+  {
+      fprintf(stderr, "Connection to database failed: %s",
+              PQerrorMessage(conn));
+      exit_nicely(conn);
+  }
+
+  /* Set always-secure search path, so malicious users can't take control. */
+  res = PQexec(conn, "SELECT pg_catalog.set_config('search_path', '', false)");
+  if (PQresultStatus(res) != PGRES_TUPLES_OK)
+  {
+      fprintf(stderr, "SET failed: %s", PQerrorMessage(conn));
+      PQclear(res);
+      exit_nicely(conn);
+  }
+
+  /*
+   * Should PQclear PGresult whenever it is no longer needed to avoid memory
+   * leaks
+   */
+  PQclear(res);
+
+
+
   /*------------------------------------------------------------------*/
   /* Get and write the REQUEST_METHOD to stdout.                      */
   /*------------------------------------------------------------------*/
@@ -258,11 +302,43 @@ int main()
 				  
 				  index++;
 			  }
-              for(int i=0; i<2*6; i++)
-			  {
-				writeData(data[i], strlen(data[i]));
-				printf("<br/>\n");
-			  }
+              //for(int i=0; i<2*6; i++)
+			  //{
+			  //	writeData(data[i], strlen(data[i]));
+			  //	printf("<br/>\n");
+			  //}
+              /* Start a transaction block */
+              res = PQexec(conn, "BEGIN");
+              if (PQresultStatus(res) != PGRES_COMMAND_OK)
+              {
+                  fprintf(stderr, "BEGIN command failed: %s", PQerrorMessage(conn));
+                  PQclear(res);
+                  exit_nicely(conn);
+              }
+              PQclear(res);
+              const char* params[3];
+              params[0] = data[1];
+              params[1] = data[3];
+              params[2] = data[5];
+              PQclear(res);
+              res = PQexecParams(conn,
+                    "INSERT INTO railroad.\"Tickets\" (first_name, last_name, departure_date, seat) VALUES ($1, $2, now(), $3)",
+                    3,
+                    NULL,
+                    params,
+                    NULL,
+                    NULL,
+                    0
+              );
+              if(PQresultStatus(res) != PGRES_COMMAND_OK)
+              {
+                  fprintf(stderr, "INSERT command failed: %s", PQerrorMessage(conn));
+                  PQclear(res);
+                  exit_nicely(conn);
+              }
+              /* end the transaction */
+              res = PQexec(conn, "END");
+              PQclear(res);
 		  }
           else
               printf("<br>Error reading standard input\n");
@@ -301,106 +377,50 @@ int main()
 
   printf("<hr/>Database output");
   printf("<div>");
-  const char *conninfo;
-  PGconn     *conn;
-  PGresult   *res;
-  int         nFields;
-  int         i,
-              j;
 
-  /*
-   * If the user supplies a parameter on the command line, use it as the
-   * conninfo string; otherwise default to setting dbname=postgres and using
-   * environment variables or defaults for all other connection parameters.
-   */
-  conninfo = "dbname = railroaddb";
+//   /*
+//    * Fetch rows from pg_database, the system catalog of databases
+//    */
+//   res = PQexec(conn, "DECLARE myportal CURSOR FOR select * from railroad.\"Tickets\"");
+//   if (PQresultStatus(res) != PGRES_COMMAND_OK)
+//   {
+//       fprintf(stderr, "DECLARE CURSOR failed: %s", PQerrorMessage(conn));
+//       PQclear(res);
+//       exit_nicely(conn);
+//   }
+//   PQclear(res);
 
-  /* Make a connection to the database */
-  conn = PQconnectdb(conninfo);
+//   res = PQexec(conn, "FETCH ALL in myportal");
+//   if (PQresultStatus(res) != PGRES_TUPLES_OK)
+//   {
+//       fprintf(stderr, "FETCH ALL failed: %s", PQerrorMessage(conn));
+//       PQclear(res);
+//       exit_nicely(conn);
+//   }
 
-  /* Check to see that the backend connection was successfully made */
-  if (PQstatus(conn) != CONNECTION_OK)
-  {
-      fprintf(stderr, "Connection to database failed: %s",
-              PQerrorMessage(conn));
-      exit_nicely(conn);
-  }
+//     /* first, print out the attribute names */
+//     nFields = PQnfields(res);
+//     for (i = 0; i < nFields; i++)
+//         printf("%-15s", PQfname(res, i));
+//     printf("<br><br>");
 
-  /* Set always-secure search path, so malicious users can't take control. */
-  res = PQexec(conn, "SELECT pg_catalog.set_config('search_path', '', false)");
-  if (PQresultStatus(res) != PGRES_TUPLES_OK)
-  {
-      fprintf(stderr, "SET failed: %s", PQerrorMessage(conn));
-      PQclear(res);
-      exit_nicely(conn);
-  }
+//     /* next, print out the rows */
+//     for (i = 0; i < PQntuples(res); i++)
+//     {
+//         for (j = 0; j < nFields; j++)
+//             printf("%-15s", PQgetvalue(res, i, j));
+//         printf("<br>");
+//     }
 
-  /*
-   * Should PQclear PGresult whenever it is no longer needed to avoid memory
-   * leaks
-   */
-  PQclear(res);
+//     PQclear(res);
 
-  /*
-   * Our test case here involves using a cursor, for which we must be inside
-   * a transaction block.  We could do the whole thing with a single
-   * PQexec() of "select * from pg_database", but that's too trivial to make
-   * a good example.
-   */
+//     /* close the portal ... we don't bother to check for errors ... */
+//     res = PQexec(conn, "CLOSE myportal");
+//     PQclear(res);
 
-  /* Start a transaction block */
-  res = PQexec(conn, "BEGIN");
-  if (PQresultStatus(res) != PGRES_COMMAND_OK)
-  {
-      fprintf(stderr, "BEGIN command failed: %s", PQerrorMessage(conn));
-      PQclear(res);
-      exit_nicely(conn);
-  }
-  PQclear(res);
-
-  /*
-   * Fetch rows from pg_database, the system catalog of databases
-   */
-  res = PQexec(conn, "DECLARE myportal CURSOR FOR select * from railroad.\"Tickets\"");
-  if (PQresultStatus(res) != PGRES_COMMAND_OK)
-  {
-      fprintf(stderr, "DECLARE CURSOR failed: %s", PQerrorMessage(conn));
-      PQclear(res);
-      exit_nicely(conn);
-  }
-  PQclear(res);
-
-  res = PQexec(conn, "FETCH ALL in myportal");
-  if (PQresultStatus(res) != PGRES_TUPLES_OK)
-  {
-      fprintf(stderr, "FETCH ALL failed: %s", PQerrorMessage(conn));
-      PQclear(res);
-      exit_nicely(conn);
-  }
-
-    /* first, print out the attribute names */
-    nFields = PQnfields(res);
-    for (i = 0; i < nFields; i++)
-        printf("%-15s", PQfname(res, i));
-    printf("<br><br>");
-
-    /* next, print out the rows */
-    for (i = 0; i < PQntuples(res); i++)
-    {
-        for (j = 0; j < nFields; j++)
-            printf("%-15s", PQgetvalue(res, i, j));
-        printf("<br>");
-    }
-
-    PQclear(res);
-
-    /* close the portal ... we don't bother to check for errors ... */
-    res = PQexec(conn, "CLOSE myportal");
-    PQclear(res);
-
-    /* end the transaction */
-    res = PQexec(conn, "END");
-    PQclear(res);
+//     /* end the transaction */
+//     res = PQexec(conn, "END");
+//     PQclear(res);
 
     /* close the connection to the database and cleanup */
     PQfinish(conn);
