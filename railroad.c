@@ -64,7 +64,7 @@ void writeData(char* ptrToData, int dataLen)
       /*--------------------------------------------------------------*/
       insertBreak = div(i, LINELEN);
       if ( insertBreak.rem == 0 )       
-          printf("<br>");
+          ;//printf("<br>");
  
   }
  
@@ -72,7 +72,10 @@ void writeData(char* ptrToData, int dataLen)
  
 }
  
- 
+char *getParam(char** data, char* name)
+{
+	
+}
  
  
  
@@ -136,6 +139,7 @@ int main()
   int    contentLength;                /* int content length          */
   int    bytesRead;                    /* number of bytes read.       */
   int    queryStringLen;               /* Length of QUERY_STRING      */
+  char	 **data;  // Parsed args
  
   /*------------------------------------------------------------------*/
   /* The "Content-type" is the minimum request header that must be    */
@@ -161,25 +165,25 @@ int main()
   printf("<html>\n");
   printf("<head>\n");
   printf("<title>\n");
-  printf("Sample iSeries HTTP Server CGI program\n");
+  printf("Покупка билета\n");
   printf("</title>\n");
   printf("</head>\n");
   printf("<body>\n");
-  printf("<h1>Sample iSeries ILE/C program.</h1>\n");
-  printf("<br>This is sample output writing in iSeries ILE/C\n");
-  printf("<br>as a sample of CGI programming.  This program reads\n");
-  printf("<br>the input data from Query_String environment\n");
-  printf("<br>variable when the Request_Method is GET and reads\n");
-  printf("<br>standard input when the Request_Method is POST.\n");
+  //printf("<h1>Sample iSeries ILE/C program.</h1>\n");
+  //printf("<br>This is sample output writing in iSeries ILE/C\n");
+  //printf("<br>as a sample of CGI programming.  This program reads\n");
+  //printf("<br>the input data from Query_String environment\n");
+  //printf("<br>variable when the Request_Method is GET and reads\n");
+  //printf("<br>standard input when the Request_Method is POST.\n");
  
   /*------------------------------------------------------------------*/
   /* Get and write the REQUEST_METHOD to stdout.                      */
   /*------------------------------------------------------------------*/
   requestMethod = getenv("REQUEST_METHOD");
-  if ( requestMethod )
-      printf("<h4>REQUEST_METHOD:</h4>%s\n", requestMethod);
-  else
-      printf("Error extracting environment variable REQUEST_METHOD.\n");
+  //if ( requestMethod )
+  //    printf("<h4>REQUEST_METHOD:</h4>%s\n", requestMethod);
+  //else
+  //    printf("Error extracting environment variable REQUEST_METHOD.\n");
  
   /*------------------------------------------------------------------*/
   /* html form data can be provided to the CGI program either on      */
@@ -199,7 +203,7 @@ int main()
       /*--------------------------------------------------------------*/
       /* Write CONTENT_LENGTH to stdout.                              */
       /*--------------------------------------------------------------*/
-      printf("<h4>CONTENT_LENGTH:</h4>%i<br><br>\n",contentLength);
+      //printf("<h4>CONTENT_LENGTH:</h4>%i<br><br>\n",contentLength);
  
       if ( contentLength ) {
  
@@ -227,8 +231,39 @@ int main()
           /* If we successfully read all bytes from stdin, format and */
           /* write the data to stdout using the writeData function.   */
           /*----------------------------------------------------------*/
+		  //Parse data
+		  // 2 - paramName + value, 6 params at all
+		  data = malloc(2*6*sizeof(char*)); // [ "firstName", "Igor", "lastName", "Baranov", "year"]
+		  for(int i=0; i<2*6; i++)
+		  {
+			  data[i] = (char *)malloc(200*sizeof(char)); // each param or value could be 200 length
+			  if (data[i])
+				memset(data[i], 0x00, 200*sizeof(char)); // fill with \0
+		  }
           if ( bytesRead == contentLength )
-              writeData(stdInData, bytesRead);
+		  {
+			  int index = 0;
+			  int data_i = 0;
+			  while(index<bytesRead)
+			  {
+				  char ch = stdInData[index];
+				  if(ch == '=' || ch == '&')
+				  {
+					  data_i++;
+				  }
+				  else
+				  {
+					  strncat(data[data_i], &ch, 1);
+				  }
+				  
+				  index++;
+			  }
+              for(int i=0; i<2*6; i++)
+			  {
+				writeData(data[i], strlen(data[i]));
+				printf("<br/>\n");
+			  }
+		  }
           else
               printf("<br>Error reading standard input\n");
  
@@ -392,6 +427,12 @@ int main()
   printf("</p>\n");
   printf("</body>\n");
   printf("</html>\n");
+  
+  for(int i=0; i<2*6; i++)
+  {
+    free(data[i]);
+  }
+  free(data);
  
   return 0;
 }

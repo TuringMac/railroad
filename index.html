@@ -12,13 +12,14 @@
 		<span>Мы предоставляем комфортные купе, питание и доступ в интернет по всему пути следования</span>
 		<hr/>
 	</div>
+	<a href="/cgi-bin/railroad.cgi">Показать занятые места</a>
 	<div class="form">
 		<h3>Пассажир</h3>
 		<form method="POST" action="/cgi-bin/railroad.cgi">
 			<label for="firstName">First name:</label><br>
-			<input id="fname" name="firstName" size=42,2><br>
+			<input name="firstName" size=42,2><br>
 			<label for="lastName">Last name:</label><br>
-			<input id="lname" name="lastName" size=42,2><br>
+			<input name="lastName" size=42,2><br>
 			<label for="year">Year born:</label><br>
 			<input id="year" name="year" size=4,2><br>
 			
@@ -26,9 +27,9 @@
 				<hr/>
 				<h3>Родитель</h3>
 				<label for="parFirstName">First name:</label><br>
-				<input id="pfname" name="parFirstName" size=42,2><br>
+				<input name="parFirstName" size=42,2><br>
 				<label for="parLastName">Last name:</label><br>
-				<input id="plname" name="parLastName" size=42,2><br>
+				<input name="parLastName" size=42,2><br>
 				<label for="parYear">Year born:</label><br>
 				<input name="parYear" size=4,2><br>
 			</div>
