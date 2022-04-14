@@ -189,8 +189,8 @@ int main()
    * conninfo string; otherwise default to setting dbname=postgres and using
    * environment variables or defaults for all other connection parameters.
    */
-  //conninfo = "user=dbuser dbname=railroaddb";
-  conninfo = "dbname=railroaddb";
+  conninfo = "user=dbuser dbname=railroaddb";
+  //conninfo = "dbname=railroaddb";
 
   /* Make a connection to the database */
   conn = PQconnectdb(conninfo);
