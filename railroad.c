@@ -320,7 +320,7 @@ int main()
               params[0] = data[1];
               params[1] = data[3];
               params[2] = data[5];
-              PQclear(res);
+			  
               res = PQexecParams(conn,
                     "INSERT INTO railroad.\"Tickets\" (first_name, last_name, departure_date, seat) VALUES ($1, $2, now(), $3)",
                     3,
@@ -330,15 +330,47 @@ int main()
                     NULL,
                     0
               );
-              if(PQresultStatus(res) != PGRES_COMMAND_OK)
+			  if(PQresultStatus(res) != PGRES_COMMAND_OK)
               {
                   fprintf(stderr, "INSERT command failed: %s", PQerrorMessage(conn));
                   PQclear(res);
                   exit_nicely(conn);
               }
+              PQclear(res);
+			  if(strlen(data[7])>0) // If Parent required
+			  {
+				  params[0] = data[7];
+				  params[1] = data[9];
+				  params[2] = data[11];
+				  res = PQexecParams(conn,
+                      "INSERT INTO railroad.\"Tickets\" (first_name, last_name, departure_date, seat) VALUES ($1, $2, now(), $3)",
+                      3,
+                      NULL,
+                      params,
+                      NULL,
+                      NULL,
+                      0
+                  );
+                  if(PQresultStatus(res) != PGRES_COMMAND_OK)
+                  {
+                      fprintf(stderr, "INSERT command failed: %s", PQerrorMessage(conn));
+                      PQclear(res);
+                      exit_nicely(conn);
+                  }
+                  PQclear(res);
+			  }
+              
               /* end the transaction */
               res = PQexec(conn, "END");
               PQclear(res);
+			  /* close the connection to the database and cleanup */
+			  PQfinish(conn);
+
+                for(int i=0; i<2*6; i++)
+                {
+                    free(data[i]);
+                }
+                free(data);
 		  }
           else
               printf("<br>Error reading standard input\n");
@@ -352,31 +384,96 @@ int main()
           printf("<br><br><b>There is no standard input data.</b>");
  
   } else if (strcmp(requestMethod, "GET") == 0 ) {
-      /*--------------------------------------------------------------*/
-      /* The REQUEST_METHOD is "GET".  The environment variable       */
-      /* QUERY_STRING will contain the form data.                     */
-      /*--------------------------------------------------------------*/
-      queryString = getenv("QUERY_STRING");
-      if ( queryString ) {
+    //   /*--------------------------------------------------------------*/
+    //   /* The REQUEST_METHOD is "GET".  The environment variable       */
+    //   /* QUERY_STRING will contain the form data.                     */
+    //   /*--------------------------------------------------------------*/
+    //   queryString = getenv("QUERY_STRING");
+    //   if ( queryString ) {
  
-          /*----------------------------------------------------------*/
-          /* Write the QUERY_STRING data to stdout.                   */
-          /*----------------------------------------------------------*/
-          printf("<h4>Server input read from QUERY_STRING:</h4>");
-          queryStringLen = strlen(queryString);
-          if ( queryStringLen )
-              writeData(queryString, queryStringLen);
-          else
-              printf("<b>There is no data in QUERY_STRING.</b>");
+    //       /*----------------------------------------------------------*/
+    //       /* Write the QUERY_STRING data to stdout.                   */
+    //       /*----------------------------------------------------------*/
+    //       printf("<h4>Server input read from QUERY_STRING:</h4>");
+    //       queryStringLen = strlen(queryString);
+    //       if ( queryStringLen )
+    //           writeData(queryString, queryStringLen);
+    //       else
+    //           printf("<b>There is no data in QUERY_STRING.</b>");
  
-      } else
-          printf("<br>Error getting QUERY_STRING variable.");
+    //   } else
+    //       printf("<br>Error getting QUERY_STRING variable.");
+
+    /* Start a transaction block */
+    res = PQexec(conn, "BEGIN");
+    if (PQresultStatus(res) != PGRES_COMMAND_OK)
+    {
+        fprintf(stderr, "BEGIN command failed: %s", PQerrorMessage(conn));
+        PQclear(res);
+        exit_nicely(conn);
+    }
+    PQclear(res);
+    /*
+     * Fetch rows from pg_database, the system catalog of databases
+     */
+    res = PQexec(conn, "DECLARE myportal CURSOR FOR select * from railroad.\"Tickets\"");
+    if (PQresultStatus(res) != PGRES_COMMAND_OK)
+    {
+        fprintf(stderr, "DECLARE CURSOR failed: %s", PQerrorMessage(conn));
+        PQclear(res);
+        exit_nicely(conn);
+    }
+    PQclear(res);
+
+    res = PQexec(conn, "FETCH ALL in myportal");
+    if (PQresultStatus(res) != PGRES_TUPLES_OK)
+    {
+        fprintf(stderr, "FETCH ALL failed: %s", PQerrorMessage(conn));
+        PQclear(res);
+        exit_nicely(conn);
+    }
+
+    printf("<table>");
+    printf("<tr>");
+    // printf("<th>Ид</th>");
+    // printf("<th>Имя</th>");
+    // printf("<th>Фамилия</th>");
+    // printf("<th>Дата отправления</th>");
+    // printf("<th>Место</th>");
+
+    /* first, print out the attribute names */
+    nFields = PQnfields(res);
+    for (i = 0; i < nFields; i++)
+        printf("<th>%s</th>", PQfname(res, i));
+    printf("</tr>");
+    /* next, print out the rows */
+    for (i = 0; i < PQntuples(res); i++)
+    {
+        printf("<tr>");
+        for (j = 0; j < nFields; j++)
+            printf("<td>%s</td>", PQgetvalue(res, i, j));
+        printf("</tr>");
+    }
+    printf("</table>");
+
+    PQclear(res);
+
+    /* close the portal ... we don't bother to check for errors ... */
+    res = PQexec(conn, "CLOSE myportal");
+    PQclear(res);
+
+    /* end the transaction */
+    res = PQexec(conn, "END");
+    PQclear(res);
+
+   /* close the connection to the database and cleanup */
+   PQfinish(conn);
  
   } else
       printf("<br><h2>ERROR: Invalid REQUEST_METHOD.</h2>");
 
-  printf("<hr/>Database output");
-  printf("<div>");
+//  printf("<hr/>Database output");
+//  printf("<div>");
 
 //   /*
 //    * Fetch rows from pg_database, the system catalog of databases
@@ -422,10 +519,10 @@ int main()
 //     res = PQexec(conn, "END");
 //     PQclear(res);
 
-    /* close the connection to the database and cleanup */
-    PQfinish(conn);
-  printf("</div>");
-  printf("End database output<hr/>");
+//    /* close the connection to the database and cleanup */
+//    PQfinish(conn);
+//  printf("</div>");
+//  printf("End database output<hr/>");
 
   /*------------------------------------------------------------------*/
   /* Write break and paragraph html tag to stdout.                    */
@@ -447,12 +544,6 @@ int main()
   printf("</p>\n");
   printf("</body>\n");
   printf("</html>\n");
-  
-  for(int i=0; i<2*6; i++)
-  {
-    free(data[i]);
-  }
-  free(data);
  
   return 0;
 }

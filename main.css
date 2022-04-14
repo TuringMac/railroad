@@ -13,3 +13,10 @@ span {
 .form {
 	padding: 10px;
 }
+
+#about {
+	font-family: "Comic Sans MS", "Comic Sans", cursive;
+}
+a {
+	color: coral;
+}
